@@ -1,133 +1,122 @@
-import './bootstrap';
+const ready = (fn) => {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+};
 
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.querySelector('#modal');
-    const modalCard = document.querySelector('.modal-card');
-    const modalEyebrow = modalCard.querySelector('.eyebrow');
-    const modalTitle = modalCard.querySelector('h2');
-    const modalIntro = modalCard.querySelector('.modal-intro');
-    const modalSave = document.querySelector('#modalSave');
-    const modalCancel = document.querySelector('#modalCancel');
-    const titleInput = document.querySelector('#agendaTitle');
-    const toast = document.querySelector('#toast');
-    const toastText = document.querySelector('#toastText');
-    const formFields = modalCard.querySelectorAll('label, .form-row');
-    let timer;
-    let modalMode = 'create';
+ready(() => {
+    // Sidebar on small screens
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
 
-    const showToast = (message) => {
-        toastText.textContent = message;
-        toast.classList.add('show');
-        clearTimeout(timer);
-        timer = setTimeout(() => toast.classList.remove('show'), 2600);
-    };
+    toggle?.addEventListener('click', () => sidebar?.classList.toggle('open'));
 
-    const openAgendaModal = (mode = 'create', row = null) => {
-        modalMode = mode;
-        formFields.forEach((field) => { field.style.removeProperty('display'); });
-        modalSave.style.display = 'inline-flex';
-        modalCancel.textContent = 'Batal';
-        if (mode === 'edit' && row) {
-            modalEyebrow.textContent = 'EDIT AGENDA';
-            modalTitle.textContent = 'Perbarui agenda kerja';
-            modalIntro.textContent = 'Sesuaikan detail agenda agar tim tetap sinkron.';
-            titleInput.value = row.querySelector('.agenda-title b').textContent.trim();
-            modalSave.textContent = 'Simpan perubahan';
-        } else {
-            modalEyebrow.textContent = 'AGENDA BARU';
-            modalTitle.textContent = 'Tambah agenda kerja';
-            modalIntro.textContent = 'Catat rencana kerja supaya tim tetap sinkron.';
-            titleInput.value = '';
-            modalSave.textContent = 'Simpan agenda';
+    document.addEventListener('click', (event) => {
+        if (window.innerWidth <= 900 && sidebar?.classList.contains('open')
+            && !sidebar.contains(event.target) && !toggle?.contains(event.target)) {
+            sidebar.classList.remove('open');
         }
-        modal.classList.add('open');
-        setTimeout(() => titleInput.focus(), 80);
-    };
-
-    const openReviewModal = (button) => {
-        modalMode = 'review';
-        const item = button.closest('.review-item');
-        const itemTitle = item?.querySelector('.review-info b')?.textContent || 'Kiriman agenda';
-        formFields.forEach((field) => { field.style.display = 'none'; });
-        modalEyebrow.textContent = 'REVIEW KIRIMAN';
-        modalTitle.textContent = itemTitle;
-        modalIntro.textContent = 'Periksa ringkasan ini sebelum memberi persetujuan kepada anggota tim.';
-        modalSave.textContent = 'Tandai sudah direview';
-        modalCancel.textContent = 'Tutup';
-        modal.classList.add('open');
-    };
-
-    const closeModal = () => { modal.classList.remove('open'); modalMode = 'create'; };
-    document.querySelector('#addAgenda')?.addEventListener('click', () => openAgendaModal());
-    document.querySelector('#modalClose')?.addEventListener('click', closeModal);
-    modalCancel?.addEventListener('click', closeModal);
-    modal?.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
-    modalSave?.addEventListener('click', () => {
-        if (modalMode === 'review') { closeModal(); showToast('Kiriman ditandai sudah direview'); return; }
-        if (!titleInput.value.trim()) { showToast('Isi judul agenda terlebih dahulu'); titleInput.focus(); return; }
-        closeModal();
-        showToast(modalMode === 'edit' ? 'Perubahan agenda berhasil disimpan' : 'Agenda berhasil ditambahkan');
     });
 
-    document.querySelectorAll('.review-action').forEach((button) => button.addEventListener('click', () => openReviewModal(button)));
-    document.querySelectorAll('.row-more').forEach((button) => button.addEventListener('click', () => openAgendaModal('edit', button.closest('.agenda-row'))));
+    // Dropdowns (notifications, filters)
+    document.querySelectorAll('[data-dropdown]').forEach((dropdown) => {
+        const button = dropdown.querySelector('[data-dropdown-toggle]');
+        const menu = dropdown.querySelector('[data-dropdown-menu]');
 
-    const filterButton = document.querySelector('.filter-button');
-    const agendaRows = [...document.querySelectorAll('.agenda-row')];
-    if (filterButton) {
-        const menu = document.createElement('div');
-        menu.className = 'filter-menu';
-        menu.innerHTML = '<button data-filter="all">Semua status</button><button data-filter="reviewed">Direview</button><button data-filter="progress">Berjalan</button><button data-filter="planned">Terjadwal</button>';
-        filterButton.parentElement.append(menu);
-        filterButton.addEventListener('click', (event) => { event.stopPropagation(); menu.classList.toggle('open'); });
-        menu.querySelectorAll('button').forEach((option) => option.addEventListener('click', () => {
-            const filter = option.dataset.filter;
-            agendaRows.forEach((row) => { row.style.display = filter === 'all' || row.querySelector(`.${filter === 'progress' ? 'in-progress' : filter === 'planned' ? 'planned-pill' : 'reviewed'}`) ? 'flex' : 'none'; });
-            filterButton.firstChild.textContent = option.textContent + ' ';
-            menu.classList.remove('open');
-            showToast(`Filter: ${option.textContent}`);
-        }));
-    }
-    document.addEventListener('click', () => document.querySelector('.filter-menu')?.classList.remove('open'));
+        button?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            menu?.classList.toggle('open');
+        });
 
-    document.querySelector('.search input')?.addEventListener('input', (event) => {
-        const query = event.target.value.toLowerCase();
-        agendaRows.forEach((row) => { row.style.display = row.textContent.toLowerCase().includes(query) ? 'flex' : 'none'; });
+        dropdown.querySelectorAll('[data-dropdown-menu] a, [data-dropdown-menu] button').forEach((item) => {
+            item.addEventListener('click', () => menu?.classList.remove('open'));
+        });
     });
-    const notificationButton = document.querySelector('.notification-button');
-    if (notificationButton) {
-        notificationButton.removeAttribute('data-toast');
-        const notificationWrap = document.createElement('div');
-        notificationWrap.className = 'notification-wrap';
-        notificationButton.parentElement.insertBefore(notificationWrap, notificationButton);
-        notificationWrap.appendChild(notificationButton);
-        const notificationPanel = document.createElement('div');
-        notificationPanel.className = 'notification-popover';
-        notificationPanel.innerHTML = '<div class="notification-head"><div><b>Notifikasi</b><span>4 belum dibaca</span></div><button class="mark-read">Tandai semua dibaca</button></div><div class="notification-list"><button class="notification-item unread"><span class="notification-dot violet">↻</span><span><b>Ringkasan kerja menunggu review</b><small>Salsabila mengirim ringkasan hari ini · 2 mnt</small></span></button><button class="notification-item unread"><span class="notification-dot blue">＋</span><span><b>Agenda baru ditambahkan</b><small>Nadia menambahkan agenda ke Tim Produk · 18 mnt</small></span></button><button class="notification-item"><span class="notification-dot green">✓</span><span><b>Agenda berhasil direview</b><small>Fikri menyetujui agenda Andi · 1 jam</small></span></button><button class="notification-item"><span class="notification-dot orange">!</span><span><b>Pengingat pengumpulan sore</b><small>4 siswa PKL belum mengirim ringkasan</small></span></button></div><button class="notification-footer">Buka pusat notifikasi →</button>';
-        notificationWrap.appendChild(notificationPanel);
-        notificationButton.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); notificationPanel.classList.toggle('open'); showToast(notificationPanel.classList.contains('open') ? '4 notifikasi menunggu perhatian' : 'Notifikasi ditutup'); });
-        notificationPanel.querySelector('.mark-read').addEventListener('click', () => { notificationPanel.querySelectorAll('.unread').forEach((item) => item.classList.remove('unread')); notificationButton.querySelector('.notification-dot')?.remove(); showToast('Semua notifikasi sudah dibaca'); });
-        notificationPanel.querySelectorAll('.notification-item').forEach((item) => item.addEventListener('click', () => { item.classList.remove('unread'); showToast('Notifikasi dibuka'); }));
-        notificationPanel.querySelector('.notification-footer').addEventListener('click', () => { notificationPanel.classList.remove('open'); showToast('Membuka pusat notifikasi'); });
-        document.addEventListener('click', (event) => { if (!notificationWrap.contains(event.target)) notificationPanel.classList.remove('open'); });
-    }
-    document.querySelectorAll('[data-toast]').forEach((button) => button.addEventListener('click', () => showToast(button.dataset.toast)));
 
-    const monthLabel = document.querySelector('.calendar-head b');
-    const months = ['Juni 2025', 'Juli 2025', 'Agustus 2025'];
-    let monthIndex = 0;
-    document.querySelectorAll('.calendar-head button').forEach((button, index) => button.addEventListener('click', () => {
-        monthIndex = Math.max(0, Math.min(months.length - 1, monthIndex + (index === 0 ? -1 : 1)));
-        monthLabel.textContent = months[monthIndex];
-        showToast(`Kalender berpindah ke ${months[monthIndex]}`);
-    }));
-    document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('click', (event) => {
-        event.preventDefault();
-        document.querySelectorAll('.nav-item').forEach((nav) => nav.classList.remove('active'));
-        item.classList.add('active');
-        document.querySelector('#breadcrumbCurrent').textContent = item.textContent.trim().replace(/\d+$/, '').trim();
-        document.querySelector('#sidebar').classList.remove('open');
-        showToast(`Membuka ${item.dataset.section}`);
-    }));
-    document.querySelector('#mobileMenu')?.addEventListener('click', () => document.querySelector('#sidebar').classList.toggle('open'));
+    document.addEventListener('click', (event) => {
+        document.querySelectorAll('[data-dropdown-menu].open').forEach((menu) => {
+            if (!menu.parentElement?.contains(event.target)) menu.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('[data-dropdown-menu].open').forEach((menu) => menu.classList.remove('open'));
+            sidebar?.classList.remove('open');
+        }
+    });
+
+    // Confirm destructive actions
+    document.querySelectorAll('form[data-confirm]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+        });
+    });
+
+    // Auto-submit filter forms when a select changes
+    document.querySelectorAll('form[data-autosubmit] select').forEach((select) => {
+        select.addEventListener('change', () => select.form?.submit());
+    });
+
+    // Dismiss flash messages
+    document.querySelectorAll('.alert[data-dismissible]').forEach((alert) => {
+        setTimeout(() => {
+            alert.style.transition = 'opacity .4s, transform .4s';
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-6px)';
+            setTimeout(() => alert.remove(), 420);
+        }, 6000);
+    });
+
+    // Agenda rows in the morning form
+    const rows = document.getElementById('agenda-rows');
+    const rowTemplate = document.getElementById('agenda-row-template');
+
+    const bindRemove = (row) => {
+        row.querySelector('[data-remove-row]')?.addEventListener('click', () => {
+            if (rows && rows.children.length > 1) row.remove();
+            updateRowNumbers();
+        });
+    };
+
+    const updateRowNumbers = () => {
+        rows?.querySelectorAll('[data-agenda-row]').forEach((row, index) => {
+            const label = row.querySelector('[data-row-number]');
+            if (label) label.textContent = index + 1;
+        });
+    };
+
+    let rowCounter = 1000;
+
+    document.getElementById('add-agenda-row')?.addEventListener('click', () => {
+        if (!rows || !rowTemplate) return;
+        const node = rowTemplate.content.firstElementChild.cloneNode(true);
+        rowCounter += 1;
+        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(rowCounter));
+        rows.appendChild(node);
+        bindRemove(node);
+        updateRowNumbers();
+        node.querySelector('input[name$="[title]"]')?.focus();
+    });
+
+    rows?.querySelectorAll('[data-agenda-row]').forEach(bindRemove);
+
+    // Extra tasks added while writing the evening summary
+    const extraRows = document.getElementById('extra-rows');
+    const extraTemplate = document.getElementById('extra-row-template');
+
+    const bindExtraRemove = (row) => {
+        row.querySelector('[data-remove-row]')?.addEventListener('click', () => row.remove());
+    };
+
+    document.getElementById('add-extra-row')?.addEventListener('click', () => {
+        if (!extraRows || !extraTemplate) return;
+        const node = extraTemplate.content.firstElementChild.cloneNode(true);
+        rowCounter += 1;
+        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(rowCounter));
+        extraRows.appendChild(node);
+        bindExtraRemove(node);
+        node.querySelector('input[name$="[title]"]')?.focus();
+    });
+
+    extraRows?.querySelectorAll('[data-extra-row]').forEach(bindExtraRemove);
 });
