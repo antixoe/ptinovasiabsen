@@ -16,12 +16,27 @@ class RoleController extends Controller
 {
     public function index(Request $request): View
     {
-        $editing = $request->filled('edit') ? Role::find($request->integer('edit')) : null;
-
         return view('admin.roles.index', [
             'roles' => Role::withCount('users')->orderBy('is_system', 'desc')->orderBy('name')->get(),
             'permissions' => Role::PERMISSIONS,
-            'editing' => $editing,
+            'assignablePermissions' => $this->assignablePermissions($request->user()),
+        ]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('admin.roles.form', [
+            'editing' => null,
+            'permissions' => Role::PERMISSIONS,
+            'assignablePermissions' => $this->assignablePermissions($request->user()),
+        ]);
+    }
+
+    public function edit(Request $request, Role $role): View
+    {
+        return view('admin.roles.form', [
+            'editing' => $role,
+            'permissions' => Role::PERMISSIONS,
             'assignablePermissions' => $this->assignablePermissions($request->user()),
         ]);
     }

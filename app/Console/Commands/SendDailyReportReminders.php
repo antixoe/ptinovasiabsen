@@ -59,13 +59,17 @@ class SendDailyReportReminders extends Command
                         route('reports.today')
                     );
 
-                    if ($student->mentor && $report) {
+                    if ($student->mentor) {
+                        $missing = $report?->isMorningSubmitted()
+                            ? 'belum mengirim ringkasan kerja'
+                            : 'belum mengisi agenda pagi';
+
                         NotificationService::send(
                             $student->mentor,
                             'report.reminder',
-                            'Siswa bimbingan belum mengirim ringkasan',
-                            $student->name.' belum mengirim ringkasan kerja '.$date->translatedFormat('d M Y').'.',
-                            route('reviews.index', ['status' => 'morning'])
+                            'Siswa bimbingan belum melengkapi laporan',
+                            $student->name.' '.$missing.' untuk '.$date->translatedFormat('d M Y').'.',
+                            route('students.show', $student)
                         );
                     }
 

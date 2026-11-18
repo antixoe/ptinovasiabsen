@@ -3,17 +3,94 @@ const ready = (fn) => {
     else document.addEventListener('DOMContentLoaded', fn);
 };
 
+const toast = (message) => {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+};
+
+const initDynamicRows = (scope) => {
+    if (!scope) return;
+
+    let counter = 1000;
+
+    const rows = scope.querySelector('#agenda-rows');
+    const rowTemplate = scope.querySelector('#agenda-row-template');
+
+    const updateRowNumbers = () => {
+        rows?.querySelectorAll('[data-agenda-row]').forEach((row, index) => {
+            const label = row.querySelector('[data-row-number]');
+            if (label) label.textContent = index + 1;
+        });
+    };
+
+    const bindRemove = (row) => {
+        row.querySelector('[data-remove-row]')?.addEventListener('click', () => {
+            if (rows && rows.children.length > 1) row.remove();
+            updateRowNumbers();
+        });
+    };
+
+    scope.querySelector('#add-agenda-row')?.addEventListener('click', () => {
+        if (!rows || !rowTemplate) return;
+        const node = rowTemplate.content.firstElementChild.cloneNode(true);
+        counter += 1;
+        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(counter));
+        rows.appendChild(node);
+        bindRemove(node);
+        updateRowNumbers();
+        node.querySelector('input[name$="[title]"]')?.focus();
+    });
+
+    rows?.querySelectorAll('[data-agenda-row]').forEach(bindRemove);
+
+    const extraRows = scope.querySelector('#extra-rows');
+    const extraTemplate = scope.querySelector('#extra-row-template');
+
+    const bindExtraRemove = (row) => {
+        row.querySelector('[data-remove-row]')?.addEventListener('click', () => row.remove());
+    };
+
+    scope.querySelector('#add-extra-row')?.addEventListener('click', () => {
+        if (!extraRows || !extraTemplate) return;
+        const node = extraTemplate.content.firstElementChild.cloneNode(true);
+        counter += 1;
+        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(counter));
+        extraRows.appendChild(node);
+        bindExtraRemove(node);
+        node.querySelector('input[name$="[title]"]')?.focus();
+    });
+
+    extraRows?.querySelectorAll('[data-extra-row]').forEach(bindExtraRemove);
+};
+
 ready(() => {
     // Sidebar on small screens
     const sidebar = document.getElementById('sidebar');
     const toggle = document.getElementById('sidebar-toggle');
 
-    toggle?.addEventListener('click', () => sidebar?.classList.toggle('open'));
+    const syncSidebar = (open) => {
+        sidebar?.classList.toggle('open', open);
+        toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.classList.toggle('nav-open', open);
+    };
+
+    toggle?.addEventListener('click', () => syncSidebar(!sidebar?.classList.contains('open')));
+
+    document.querySelectorAll('[data-sidebar-close]').forEach((backdrop) => {
+        backdrop.addEventListener('click', () => syncSidebar(false));
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 900 && sidebar?.classList.contains('open')) syncSidebar(false);
+    });
 
     document.addEventListener('click', (event) => {
         if (window.innerWidth <= 900 && sidebar?.classList.contains('open')
             && !sidebar.contains(event.target) && !toggle?.contains(event.target)) {
-            sidebar.classList.remove('open');
+            syncSidebar(false);
         }
     });
 
@@ -39,22 +116,25 @@ ready(() => {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            document.querySelectorAll('[data-dropdown-menu].open').forEach((menu) => menu.classList.remove('open'));
-            sidebar?.classList.remove('open');
-        }
-    });
+        if (event.key !== 'Escape') return;
 
-    // Confirm destructive actions
-    document.querySelectorAll('form[data-confirm]').forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-        });
+        document.querySelectorAll('[data-dropdown-menu].open').forEach((menu) => menu.classList.remove('open'));
+        syncSidebar(false);
     });
 
     // Auto-submit filter forms when a select changes
     document.querySelectorAll('form[data-autosubmit] select').forEach((select) => {
         select.addEventListener('change', () => select.form?.submit());
+    });
+
+    // Fill both password fields with the workspace default password
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-use-default-password]');
+        if (!button) return;
+
+        button.closest('form')?.querySelectorAll('input[name="password"], input[name="password_confirmation"]').forEach((input) => {
+            input.value = button.dataset.useDefaultPassword;
+        });
     });
 
     // Dismiss flash messages
@@ -67,56 +147,222 @@ ready(() => {
         }, 6000);
     });
 
-    // Agenda rows in the morning form
-    const rows = document.getElementById('agenda-rows');
-    const rowTemplate = document.getElementById('agenda-row-template');
-
-    const bindRemove = (row) => {
-        row.querySelector('[data-remove-row]')?.addEventListener('click', () => {
-            if (rows && rows.children.length > 1) row.remove();
-            updateRowNumbers();
-        });
-    };
-
-    const updateRowNumbers = () => {
-        rows?.querySelectorAll('[data-agenda-row]').forEach((row, index) => {
-            const label = row.querySelector('[data-row-number]');
-            if (label) label.textContent = index + 1;
-        });
-    };
-
-    let rowCounter = 1000;
-
-    document.getElementById('add-agenda-row')?.addEventListener('click', () => {
-        if (!rows || !rowTemplate) return;
-        const node = rowTemplate.content.firstElementChild.cloneNode(true);
-        rowCounter += 1;
-        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(rowCounter));
-        rows.appendChild(node);
-        bindRemove(node);
-        updateRowNumbers();
-        node.querySelector('input[name$="[title]"]')?.focus();
-    });
-
-    rows?.querySelectorAll('[data-agenda-row]').forEach(bindRemove);
-
-    // Extra tasks added while writing the evening summary
-    const extraRows = document.getElementById('extra-rows');
-    const extraTemplate = document.getElementById('extra-row-template');
-
-    const bindExtraRemove = (row) => {
-        row.querySelector('[data-remove-row]')?.addEventListener('click', () => row.remove());
-    };
-
-    document.getElementById('add-extra-row')?.addEventListener('click', () => {
-        if (!extraRows || !extraTemplate) return;
-        const node = extraTemplate.content.firstElementChild.cloneNode(true);
-        rowCounter += 1;
-        node.innerHTML = node.innerHTML.replaceAll('__INDEX__', String(rowCounter));
-        extraRows.appendChild(node);
-        bindExtraRemove(node);
-        node.querySelector('input[name$="[title]"]')?.focus();
-    });
-
-    extraRows?.querySelectorAll('[data-extra-row]').forEach(bindExtraRemove);
+    initDynamicRows(document);
+    initModals();
 });
+
+function initModals() {
+    const root = document.getElementById('modal-root');
+    if (!root) return;
+
+    const card = root.querySelector('.modal-card');
+    const title = document.getElementById('modal-title');
+    const body = document.getElementById('modal-body');
+    let returnFocus = null;
+    let currentSize = null;
+
+    const send = (form, data) => fetch(form.action, {
+        method: 'POST',
+        body: data,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+    });
+
+    const show = (heading, wide) => {
+        returnFocus = document.activeElement;
+        root.classList.add('open');
+        root.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        card?.classList.toggle('lg', wide === 'lg');
+        title.textContent = heading;
+        body.scrollTop = 0;
+        body.innerHTML = '<div class="modal-loading">Memuat…</div>';
+    };
+
+    const close = () => {
+        root.classList.remove('open');
+        root.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        body.innerHTML = '';
+        returnFocus?.focus?.();
+        returnFocus = null;
+    };
+
+    const notify = (form, message) => {
+        let box = form.querySelector('.modal-alert');
+
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'modal-alert';
+            form.prepend(box);
+        }
+
+        box.textContent = message;
+        box.scrollIntoView({ block: 'nearest' });
+    };
+
+    const open = async (url, wide) => {
+        currentSize = wide || null;
+        show('Memuat…', wide);
+
+        try {
+            const target = new URL(url, window.location.origin);
+            target.searchParams.set('modal', '1');
+
+            const response = await fetch(target, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+
+            if (!response.ok) throw new Error('Halaman tidak dapat dimuat (' + response.status + ').');
+
+            const frame = new DOMParser()
+                .parseFromString(await response.text(), 'text/html')
+                .querySelector('[data-modal-content]');
+
+            if (!frame) throw new Error('Konten modal tidak tersedia.');
+
+            title.textContent = (frame.dataset.modalTitle || '').trim() || 'Detail';
+            body.innerHTML = frame.innerHTML;
+            body.scrollTop = 0;
+            initDynamicRows(body);
+            body.querySelector('input:not([type="hidden"]), select, textarea')?.focus({ preventScroll: true });
+        } catch (error) {
+            title.textContent = 'Gagal memuat';
+            body.innerHTML = '<div class="modal-alert">' + error.message + '</div>';
+        }
+    };
+
+    const showErrors = (form, errors, message) => {
+        form.querySelectorAll('.field-error').forEach((node) => node.remove());
+        form.querySelectorAll('.invalid').forEach((node) => node.classList.remove('invalid'));
+
+        const keys = Object.keys(errors || {});
+
+        if (!keys.length) return notify(form, message || 'Data belum valid.');
+
+        notify(form, [].concat(errors[keys[0]])[0]);
+
+        keys.forEach((key) => {
+            const field = form.elements.namedItem(key);
+            const input = field instanceof RadioNodeList ? field[0] : field;
+
+            if (!input?.classList || input.type === 'hidden') return;
+
+            input.classList.add('invalid');
+
+            const note = document.createElement('small');
+            note.className = 'field-error';
+            note.textContent = [].concat(errors[key])[0];
+            input.insertAdjacentElement('afterend', note);
+        });
+
+        form.querySelector('.invalid')?.focus?.();
+    };
+
+    const submit = async (form, submitter, inside) => {
+        const buttons = [...form.querySelectorAll('button[type="submit"], button:not([type])')];
+        buttons.forEach((button) => { button.disabled = true; });
+
+        const data = new FormData(form);
+        if (submitter?.name) data.set(submitter.name, submitter.value);
+
+        try {
+            const response = await send(form, data);
+
+            if (response.status === 422) {
+                const payload = await response.json().catch(() => ({}));
+                return showErrors(form, payload.errors, payload.message);
+            }
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => null);
+                const message = payload?.message || 'Terjadi kesalahan (' + response.status + ').';
+                return inside ? notify(form, message) : toast(message);
+            }
+
+            close();
+            window.location.reload();
+        } catch (error) {
+            if (inside) notify(form, 'Koneksi gagal. Silakan coba lagi.');
+            else toast('Koneksi gagal. Silakan coba lagi.');
+        } finally {
+            buttons.forEach((button) => { button.disabled = false; });
+        }
+    };
+
+    const askConfirm = (form) => {
+        show('Konfirmasi');
+        body.innerHTML = '<p class="modal-confirm-text" style="margin:0 0 18px;font-size:13px;line-height:1.7;color:#3d4a61"></p>'
+            + '<div class="modal-alert" hidden></div>'
+            + '<div class="flex gap-2 justify-between"><button type="button" class="btn btn-ghost" data-modal-close>Batal</button>'
+            + '<button type="button" class="btn btn-danger" data-confirm-accept>Ya, lanjutkan</button></div>';
+
+        body.querySelector('.modal-confirm-text').textContent = form.dataset.confirm || 'Lanjutkan tindakan ini?';
+
+        const accept = body.querySelector('[data-confirm-accept]');
+
+        accept.addEventListener('click', async () => {
+            accept.disabled = true;
+
+            try {
+                const response = await send(form, new FormData(form));
+
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => null);
+                    throw new Error(payload?.message || 'Tindakan gagal (' + response.status + ').');
+                }
+
+                close();
+                window.location.reload();
+            } catch (error) {
+                const box = body.querySelector('.modal-alert');
+                box.hidden = false;
+                box.textContent = error.message;
+                accept.disabled = false;
+            }
+        });
+    };
+
+    document.addEventListener('click', (event) => {
+        const opener = event.target.closest('[data-modal]');
+
+        if (opener) {
+            event.preventDefault();
+            return open(opener.dataset.modal, opener.dataset.modalSize);
+        }
+
+        if (event.target.closest('[data-modal-close]')) {
+            event.preventDefault();
+            close();
+        }
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement)) return;
+
+        if (form.matches('[data-confirm]')) {
+            event.preventDefault();
+            return askConfirm(form);
+        }
+
+        const inside = body.contains(form);
+
+        if (inside && form.method.toLowerCase() === 'get') {
+            event.preventDefault();
+            const params = new URLSearchParams(new FormData(form)).toString();
+            return open(params ? form.action + '?' + params : form.action, currentSize);
+        }
+
+        if (!inside && !form.matches('[data-ajax]')) return;
+
+        event.preventDefault();
+        submit(form, event.submitter, inside);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && root.classList.contains('open')) close();
+    });
+}

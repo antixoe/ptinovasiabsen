@@ -16,7 +16,7 @@
             <p class="sub">Semua agenda pagi dan ringkasan sore yang kamu kirim ke pembimbing.</p>
         </div>
         <div class="page-actions">
-            <a href="{{ route('reports.today') }}" class="btn btn-primary"><x-icon name="file-text" /> Laporan hari ini</a>
+            <a href="{{ route('reports.today') }}" class="btn btn-primary" data-modal="{{ route('reports.today') }}" data-modal-size="lg"><x-icon name="file-text" /> Laporan hari ini</a>
         </div>
     </div>
 
@@ -52,7 +52,7 @@
                 <div class="empty-icon"><x-icon name="file-text" /></div>
                 <b>Belum ada laporan di bulan ini</b>
                 <p>Laporan terbentuk saat kamu mengirim agenda pagi pada halaman laporan hari ini.</p>
-                <a href="{{ route('reports.today') }}" class="btn btn-primary btn-sm">Isi laporan hari ini</a>
+                <a href="{{ route('reports.today') }}" class="btn btn-primary btn-sm" data-modal="{{ route('reports.today') }}" data-modal-size="lg">Isi laporan hari ini</a>
             </div>
         @else
             <div class="table-wrap">
@@ -88,9 +88,9 @@
                                 <td><span class="badge {{ $report->statusTone() }}">{{ $report->statusLabel() }}</span></td>
                                 <td>
                                     <div class="actions">
-                                        <a href="{{ route('reports.show', $report) }}" class="btn btn-ghost btn-sm"><x-icon name="eye" :size="13" /> Detail</a>
+                                        <a href="{{ route('reports.show', $report) }}" class="btn btn-ghost btn-sm" data-modal="{{ route('reports.show', $report) }}" data-modal-size="lg"><x-icon name="eye" :size="13" /> Detail</a>
                                         @if (! $report->reviewed_at)
-                                            <a href="{{ route('reports.today') }}" class="btn btn-soft btn-sm">Isi</a>
+                                            <a href="{{ route('reports.today') }}" class="btn btn-soft btn-sm" data-modal="{{ route('reports.today') }}" data-modal-size="lg">Isi</a>
                                         @endif
                                     </div>
                                 </td>

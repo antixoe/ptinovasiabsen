@@ -19,7 +19,7 @@
         <div class="page-actions">
             <a href="{{ $isOwner ? route('reports.index') : route('reviews.index') }}" class="btn btn-ghost"><x-icon name="arrow-left" /> Kembali</a>
             @if ($canReview && $report->isSummarySubmitted())
-                <a href="{{ route('reviews.show', $report) }}" class="btn btn-primary"><x-icon name="check-circle" /> Buka review</a>
+                <a href="{{ route('reviews.show', $report) }}" class="btn btn-primary" data-modal="{{ route('reviews.show', $report) }}" data-modal-size="lg"><x-icon name="check-circle" /> Buka review</a>
             @endif
         </div>
     </div>

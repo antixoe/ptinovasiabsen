@@ -106,7 +106,7 @@
                     </div>
 
                     <div class="form-actions">
-                        <a href="{{ route('agenda.index', ['date' => $dateValue]) }}" class="btn btn-ghost">Batal</a>
+                        <a href="{{ route('agenda.index', ['date' => $dateValue]) }}" class="btn btn-ghost" data-modal-close>Batal</a>
                         <button type="submit" class="btn btn-primary">
                             <x-icon :name="$editing ? 'check' : 'plus'" :size="14" />
                             {{ $editing ? 'Simpan perubahan' : 'Tambah agenda' }}
@@ -116,6 +116,7 @@
             </div>
         </div>
 
+        @unless (request()->boolean('modal'))
         <div class="stack">
             <div class="card">
                 <div class="card-head"><div><h2>Alur agenda</h2><p>Bagaimana item ini dipakai</p></div></div>
@@ -139,5 +140,6 @@
                 </div>
             @endif
         </div>
+        @endunless
     </div>
 @endsection

@@ -17,7 +17,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('students.index') }}" class="btn btn-ghost"><x-icon name="arrow-left" /> Kembali</a>
-            <a href="{{ route('agenda.create', ['member' => $student->id]) }}" class="btn btn-primary"><x-icon name="plus" /> Tambah agenda</a>
+            <a href="{{ route('agenda.create', ['member' => $student->id]) }}" class="btn btn-primary" data-modal="{{ route('agenda.create', ['member' => $student->id]) }}"><x-icon name="plus" /> Tambah agenda</a>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="detail-grid" style="grid-template-columns:repeat(4,1fr);flex:1;min-width:320px">
+                <div class="detail-grid profile-stats">
                     <div class="detail"><span>Laporan</span><b>{{ $stats['reports'] }}</b></div>
                     <div class="detail"><span>Menunggu review</span><b>{{ $stats['pending'] }}</b></div>
                     <div class="detail"><span>Agenda</span><b>{{ $stats['agendas'] }}</b></div>
@@ -49,6 +49,7 @@
     </div>
 
     <div class="grid-2">
+        @unless (request()->boolean('modal'))
         <div class="card">
             <div class="card-head">
                 <div>
@@ -56,7 +57,7 @@
                     <p>Riwayat agenda dan laporan siswa</p>
                 </div>
                 <form method="GET" action="{{ route('students.show', $student) }}">
-                    <input type="month" name="month" value="{{ $monthParam }}" class="input" style="width:155px;padding:7px 9px" onchange="this.form.submit()">
+                    <input type="month" name="month" value="{{ $monthParam }}" class="input month-input" onchange="this.form.submit()">
                 </form>
             </div>
             <div class="table-wrap" style="padding:0 14px 14px">
@@ -87,6 +88,7 @@
                 </table>
             </div>
         </div>
+        @endunless
 
         <div class="card">
             <div class="card-head">
@@ -114,7 +116,7 @@
                                     <td><span class="badge {{ $report->statusTone() }}">{{ $report->statusLabel() }}</span></td>
                                     <td>
                                         <div class="actions">
-                                            <a href="{{ route('reviews.show', $report) }}" class="btn btn-ghost btn-sm">Buka</a>
+                                            <a href="{{ route('reviews.show', $report) }}" class="btn btn-ghost btn-sm" data-modal="{{ route('reviews.show', $report) }}" data-modal-size="lg">Buka</a>
                                         </div>
                                     </td>
                                 </tr>

@@ -20,7 +20,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('agenda.index') }}" class="btn btn-ghost"><x-icon name="file-text" /> Mode daftar</a>
-            <a href="{{ route('agenda.create') }}" class="btn btn-primary"><x-icon name="plus" /> Tambah agenda</a>
+            <a href="{{ route('agenda.create') }}" class="btn btn-primary" data-modal="{{ route('agenda.create') }}"><x-icon name="plus" /> Tambah agenda</a>
         </div>
     </div>
 
@@ -29,7 +29,7 @@
             <div class="flex items-center justify-between gap-3" style="flex-wrap:wrap">
                 <div class="flex items-center gap-2">
                     <a href="{{ route('agenda.calendar', array_filter(['month' => $prev, 'member' => $memberId])) }}" class="icon-btn" aria-label="Bulan sebelumnya"><x-icon name="chevron-left" /></a>
-                    <div style="min-width:170px;text-align:center">
+                    <div class="month-nav">
                         <b style="font-size:13px">{{ $month->translatedFormat('F Y') }}</b>
                         <div class="tiny muted">{{ $month->isCurrentMonth() ? 'Bulan berjalan' : 'Arsip agenda' }}</div>
                     </div>
@@ -40,9 +40,9 @@
                 </div>
 
                 @if ($members->count() > 1)
-                    <form method="GET" action="{{ route('agenda.calendar') }}" class="flex items-center gap-2" data-autosubmit>
+                    <form method="GET" action="{{ route('agenda.calendar') }}" class="filter-bar" data-autosubmit>
                         <input type="hidden" name="month" value="{{ $current }}">
-                        <select name="member" class="select" style="width:210px">
+                        <select name="member" class="select">
                             <option value="">Semua anggota yang terlihat</option>
                             @foreach ($members as $member)
                                 <option value="{{ $member->id }}" @selected((string) $memberId === (string) $member->id)>{{ $member->name }}</option>

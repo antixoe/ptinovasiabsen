@@ -65,6 +65,10 @@ class LoginController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
         AuditLogger::log('auth.login', $user, ['email' => $user->email], $user);
 
+        if ($user->must_change_password) {
+            return redirect()->route('password.edit')->with('status', 'Kata sandi akunmu masih kata sandi awal. Ganti dulu untuk melanjutkan.');
+        }
+
         return redirect()->intended(route('dashboard'))->with('status', 'Selamat datang kembali, '.$user->name.'.');
     }
 

@@ -19,7 +19,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('agenda.calendar') }}" class="btn btn-ghost"><x-icon name="calendar" /> Kalender</a>
-            <a href="{{ route('agenda.create', ['date' => $date->toDateString()]) }}" class="btn btn-primary"><x-icon name="plus" /> Tambah agenda</a>
+            <a href="{{ route('agenda.create', ['date' => $date->toDateString()]) }}" class="btn btn-primary" data-modal="{{ route('agenda.create', ['date' => $date->toDateString()]) }}"><x-icon name="plus" /> Tambah agenda</a>
         </div>
     </div>
 
@@ -28,7 +28,7 @@
             <div class="flex items-center justify-between gap-3" style="flex-wrap:wrap">
                 <div class="flex items-center gap-2">
                     <a href="{{ route('agenda.index', array_merge(request()->query(), ['date' => $prevDate->toDateString()])) }}" class="icon-btn" aria-label="Hari sebelumnya"><x-icon name="chevron-left" /></a>
-                    <div style="min-width:190px;text-align:center">
+                    <div class="date-nav">
                         <b style="font-size:13px">{{ $date->translatedFormat('l, d F Y') }}</b>
                         <div class="tiny muted">{{ $isToday ? 'Hari ini' : $date->diffForHumans() }}</div>
                     </div>
@@ -38,17 +38,17 @@
                     @endunless
                 </div>
 
-                <form method="GET" action="{{ route('agenda.index') }}" class="flex items-center gap-2" style="flex-wrap:wrap" data-autosubmit>
+                <form method="GET" action="{{ route('agenda.index') }}" class="filter-bar" data-autosubmit>
                     <input type="hidden" name="date" value="{{ $date->toDateString() }}">
-                    <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="input" placeholder="Cari agenda…" style="width:170px">
-                    <select name="status" class="select" style="width:140px">
+                    <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="input" placeholder="Cari agenda…">
+                    <select name="status" class="select">
                         <option value="">Semua status</option>
                         @foreach (['planned' => 'Terjadwal', 'in_progress' => 'Berjalan', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan'] as $value => $label)
                             <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                     @if ($canPickMember)
-                        <select name="member" class="select" style="width:170px">
+                        <select name="member" class="select">
                             <option value="">Semua anggota</option>
                             @foreach ($members as $member)
                                 <option value="{{ $member->id }}" @selected((string) ($filters['member'] ?? '') === (string) $member->id)>{{ $member->name }}</option>
@@ -82,7 +82,7 @@
                 <div class="empty-icon"><x-icon name="calendar" /></div>
                 <b>Tidak ada agenda pada tanggal ini</b>
                 <p>Ubah filter tanggal, atau tambahkan agenda baru untuk hari tersebut.</p>
-                <a href="{{ route('agenda.create', ['date' => $date->toDateString()]) }}" class="btn btn-primary btn-sm"><x-icon name="plus" :size="13" /> Tambah agenda</a>
+                <a href="{{ route('agenda.create', ['date' => $date->toDateString()]) }}" class="btn btn-primary btn-sm" data-modal="{{ route('agenda.create', ['date' => $date->toDateString()]) }}"><x-icon name="plus" :size="13" /> Tambah agenda</a>
             </div>
         @else
             <div class="card-body">
@@ -96,7 +96,7 @@
                         </div>
 
                         @can('manage-agenda-for', $agenda->user)
-                            <form method="POST" action="{{ route('agenda.toggle', $agenda) }}" class="agenda-check">
+                            <form method="POST" action="{{ route('agenda.toggle', $agenda) }}" class="agenda-check" data-ajax>
                                 @csrf @method('PATCH')
                                 <button type="submit" class="check-circle {{ $agenda->isDone() ? 'checked' : '' }}" title="{{ $agenda->isDone() ? 'Tandai belum selesai' : 'Tandai selesai' }}">
                                     <x-icon name="check" />
@@ -136,8 +136,8 @@
                         </div>
 
                         @can('manage-agenda-for', $agenda->user)
-                            <div class="flex gap-2 items-center">
-                                <a href="{{ route('agenda.edit', $agenda) }}" class="btn btn-ghost btn-sm"><x-icon name="edit" :size="13" /> Ubah</a>
+                            <div class="agenda-actions">
+                                <a href="{{ route('agenda.edit', $agenda) }}" class="btn btn-ghost btn-sm" data-modal="{{ route('agenda.edit', $agenda) }}"><x-icon name="edit" :size="13" /> Ubah</a>
                                 <form method="POST" action="{{ route('agenda.destroy', $agenda) }}" data-confirm="Hapus agenda “{{ $agenda->title }}”? Tindakan ini tidak bisa dibatalkan.">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-sm" title="Hapus agenda"><x-icon name="trash" :size="13" /></button>

@@ -47,25 +47,25 @@
         </div>
 
         <div class="card-body pad" style="padding-bottom:0">
-            <form method="GET" action="{{ route('admin.audit.index') }}" class="flex items-center gap-2" style="flex-wrap:wrap">
-                <div class="search-box" style="width:210px">
+            <form method="GET" action="{{ route('admin.audit.index') }}" class="filter-bar">
+                <div class="search-box">
                     <x-icon name="search" />
                     <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari aksi / metadata…">
                 </div>
-                <select name="user" class="select" style="width:175px">
+                <select name="user" class="select">
                     <option value="">Semua pengguna</option>
                     @foreach ($users as $user)
                         <option value="{{ $user->id }}" @selected((string) request('user') === (string) $user->id)>{{ $user->name }}</option>
                     @endforeach
                 </select>
-                <select name="action" class="select" style="width:190px">
+                <select name="action" class="select">
                     <option value="">Semua aksi</option>
                     @foreach ($actions as $action)
                         <option value="{{ $action }}" @selected(request('action') === $action)>{{ $labels[$action] ?? $action }}</option>
                     @endforeach
                 </select>
-                <input type="date" name="from" value="{{ request('from') }}" class="input" style="width:145px">
-                <input type="date" name="to" value="{{ request('to') }}" class="input" style="width:145px">
+                <input type="date" name="from" value="{{ request('from') }}" class="input">
+                <input type="date" name="to" value="{{ request('to') }}" class="input">
                 <button type="submit" class="btn btn-ghost btn-sm"><x-icon name="filter" :size="13" /> Terapkan</button>
             </form>
         </div>

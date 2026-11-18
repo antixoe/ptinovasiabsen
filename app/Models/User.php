@@ -27,6 +27,7 @@ class User extends Authenticatable
         'avatar_color',
         'is_active',
         'last_login_at',
+        'must_change_password',
     ];
 
     protected $hidden = [
@@ -41,6 +42,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'must_change_password' => 'boolean',
         ];
     }
 

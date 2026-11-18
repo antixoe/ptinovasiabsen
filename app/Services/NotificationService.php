@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\WorkspaceNotificationMail;
 use App\Models\User;
 use App\Models\WorkspaceNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class NotificationService
 {
@@ -13,12 +17,18 @@ class NotificationService
             return null;
         }
 
-        return $recipient->workspaceNotifications()->create([
+        $notification = $recipient->workspaceNotifications()->create([
             'type' => $type,
             'title' => $title,
             'body' => $body,
             'link' => $link,
         ]);
+
+        if (in_array($type, config('notifications.important_types', []), true)) {
+            self::deliverExternally($recipient, $notification);
+        }
+
+        return $notification;
     }
 
     /**
@@ -34,5 +44,38 @@ class NotificationService
         }
 
         return $count;
+    }
+
+    /**
+     * Mirror an important notification to email and Discord when configured.
+     * Delivery problems must never break the user action that triggered them.
+     */
+    private static function deliverExternally(User $recipient, WorkspaceNotification $notification): void
+    {
+        $email = config('notifications.email.to') ?: $recipient->email;
+
+        if (config('notifications.email.enabled') && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            try {
+                Mail::to($email)->send(new WorkspaceNotificationMail($recipient, $notification));
+            } catch (Throwable $exception) {
+                Log::warning('Email notification delivery failed.', [
+                    'user_id' => $recipient->id,
+                    'notification_id' => $notification->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        if (config('notifications.discord.webhook_url')) {
+            try {
+                DiscordNotifier::send($recipient, $notification);
+            } catch (Throwable $exception) {
+                Log::warning('Discord notification delivery failed.', [
+                    'user_id' => $recipient->id,
+                    'notification_id' => $notification->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
     }
 }

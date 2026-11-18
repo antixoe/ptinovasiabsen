@@ -20,7 +20,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('reviews.index') }}" class="btn btn-ghost"><x-icon name="arrow-left" /> Antrean review</a>
-            <a href="{{ route('students.show', $report->user) }}" class="btn btn-ghost"><x-icon name="user" /> Profil siswa</a>
+            <a href="{{ route('students.show', $report->user) }}" class="btn btn-ghost" data-modal="{{ route('students.show', $report->user) }}" data-modal-size="lg"><x-icon name="user" /> Profil siswa</a>
         </div>
     </div>
 
@@ -103,7 +103,7 @@
                                         @endif
                                         @can('manage-agenda-for', $agenda->user)
                                             <span class="meta-separator">·</span>
-                                            <a href="{{ route('agenda.edit', $agenda) }}" class="text-link">Ubah agenda</a>
+                                            <a href="{{ route('agenda.edit', $agenda) }}" class="text-link" data-modal="{{ route('agenda.edit', $agenda) }}">Ubah agenda</a>
                                         @endcan
                                     </div>
                                 </div>

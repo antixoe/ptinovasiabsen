@@ -30,11 +30,12 @@
         <div class="page-actions">
             <a href="{{ route('reports.index') }}" class="btn btn-ghost"><x-icon name="book" /> Riwayat laporan</a>
             @if ($summarySubmitted && $report)
-                <a href="{{ route('reports.show', $report) }}" class="btn btn-primary"><x-icon name="eye" /> Lihat laporan</a>
+                <a href="{{ route('reports.show', $report) }}" class="btn btn-primary" data-modal="{{ route('reports.show', $report) }}" data-modal-size="lg"><x-icon name="eye" /> Lihat laporan</a>
             @endif
         </div>
     </div>
 
+    @unless (request()->boolean('modal'))
     <div class="insight-strip">
         <span class="insight-icon">
             <x-icon :name="$summarySubmitted ? 'check-circle' : ($morningSubmitted ? 'moon' : 'sun')" :size="16" />
@@ -58,6 +59,7 @@
         <span class="strip-divider"></span>
         <span class="badge {{ $report?->statusTone() ?? 'neutral' }}">{{ $report?->statusLabel() ?? 'Belum diisi' }}</span>
     </div>
+    @endunless
 
     @if ($isRevision && $report?->review_note)
         <div class="alert warning">
@@ -261,6 +263,7 @@
                 </div>
             </div>
 
+            @unless (request()->boolean('modal'))
             <div class="stack">
                 <div class="card">
                     <div class="card-head"><div><h2>Status laporan</h2><p>Alur pengiriman hari ini</p></div></div>
@@ -299,6 +302,7 @@
                     <span>Pengingat otomatis dikirim setiap pukul 18.00 bila ringkasan belum masuk.</span>
                 </div>
             </div>
+            @endunless
         </div>
     @endif
 @endsection

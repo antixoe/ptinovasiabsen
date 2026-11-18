@@ -55,17 +55,17 @@
                 <a href="{{ route('reviews.index', ['status' => 'reviewed']) }}" class="tab {{ $status === 'reviewed' ? 'active' : '' }}">Sudah direview</a>
             </div>
 
-            <form method="GET" action="{{ route('reviews.index') }}" class="flex items-center gap-2 mb-4" style="flex-wrap:wrap" data-autosubmit>
+            <form method="GET" action="{{ route('reviews.index') }}" class="filter-bar mb-4" data-autosubmit>
                 @if ($status)
                     <input type="hidden" name="status" value="{{ $status }}">
                 @endif
-                <select name="member" class="select" style="width:190px">
+                <select name="member" class="select">
                     <option value="">Semua siswa</option>
                     @foreach ($members as $member)
                         <option value="{{ $member->id }}" @selected((string) request('member') === (string) $member->id)>{{ $member->name }}</option>
                     @endforeach
                 </select>
-                <select name="month" class="select" style="width:160px">
+                <select name="month" class="select">
                     <option value="">Semua bulan</option>
                     @foreach ($monthOptions as $option)
                         <option value="{{ $option->format('Y-m') }}" @selected(request('month') === $option->format('Y-m'))>{{ $option->translatedFormat('F Y') }}</option>
@@ -125,7 +125,7 @@
                                 <td><span class="badge {{ $report->statusTone() }}">{{ $report->statusLabel() }}</span></td>
                                 <td>
                                     <div class="actions">
-                                        <a href="{{ route('reviews.show', $report) }}" class="btn btn-soft btn-sm">
+                                        <a href="{{ route('reviews.show', $report) }}" class="btn btn-soft btn-sm" data-modal="{{ route('reviews.show', $report) }}" data-modal-size="lg">
                                             {{ $report->status === 'summary' ? 'Review' : 'Detail' }}
                                         </a>
                                     </div>

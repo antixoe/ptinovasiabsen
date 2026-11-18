@@ -10,10 +10,9 @@
 <div class="auth-page">
     <section class="auth-art">
         <div class="brand">
-            <span class="brand-mark"><x-icon name="sparkles" /></span>
             <span>
                 <b>Ruang Kerja</b>
-                <small>PT Inovasi Absen</small>
+                <small>Create If Impossible</small>
             </span>
         </div>
 
@@ -44,16 +43,15 @@
             </div>
         </div>
 
-        <footer>© {{ now()->year }} PT Inovasi Absen · Workspace internal</footer>
+        <footer>© {{ now()->year }} Create If Impossible · Workspace internal</footer>
     </section>
 
     <section class="auth-form-side">
         <div class="auth-box">
             <div class="auth-mobile-brand">
-                <span class="brand-mark"><x-icon name="sparkles" /></span>
                 <span>
                     <b>Ruang Kerja</b>
-                    <small>PT Inovasi Absen</small>
+                    <small>Create If Impossible</small>
                 </span>
             </div>
 

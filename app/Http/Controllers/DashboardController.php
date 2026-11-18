@@ -6,6 +6,7 @@ use App\Models\Agenda;
 use App\Models\AuditLog;
 use App\Models\DailyReport;
 use App\Models\User;
+use App\Services\StudentCompliance;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,6 +16,9 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $today = today();
+
+        $studentRows = $user->isStudent() ? collect() : StudentCompliance::snapshot($user);
+        $attention = $studentRows->where('needs_attention', true)->values();
 
         $visibleAgendas = Agenda::query()->visibleTo($user);
 
@@ -87,11 +91,12 @@ class DashboardController extends Controller
             'week_rate' => $weekTotal > 0 ? (int) round($weekDone / $weekTotal * 100) : 0,
             'mentees' => $user->mentees()->count(),
             'unread' => $user->unreadNotificationCount(),
+            'attention' => $attention->count(),
         ];
 
         return view('dashboard', compact(
             'user', 'today', 'todayAgendas', 'reviewQueue', 'todayReport',
-            'recentReports', 'activity', 'weeklySeries', 'stats'
+            'recentReports', 'activity', 'weeklySeries', 'stats', 'attention'
         ));
     }
 }

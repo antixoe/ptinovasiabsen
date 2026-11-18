@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    @if ($students->isEmpty())
+    @if ($rows->isEmpty())
         <div class="card">
             <div class="empty">
                 <div class="empty-icon"><x-icon name="users" /></div>
@@ -24,14 +24,27 @@
             </div>
         </div>
     @else
+        @if ($attention->count())
+            <div class="alert error attention-alert">
+                <x-icon name="alert" />
+                <div class="flex-1">
+                    <b>{{ $attention->count() }} siswa perlu ditindaklanjuti hari ini.</b>
+                    <span>{{ $missingMorning }} belum mengisi agenda pagi · {{ $missingSummary }} belum mengirim ringkasan.</span>
+                </div>
+            </div>
+        @endif
+
         <div class="grid-3">
-            @foreach ($students as $student)
-                @php $todayReport = $todayReports->get($student->id); @endphp
-                <div class="card">
+            @foreach ($rows as $row)
+                @php
+                    $student = $row['student'];
+                    $todayReport = $row['report'];
+                @endphp
+                <div class="card {{ $row['needs_attention'] ? 'attention-card' : '' }}">
                     <div class="card-body pad">
                         <div class="flex items-center justify-between">
                             <x-avatar :user="$student" size="lg" />
-                            <span class="badge {{ $todayReport?->statusTone() ?? 'neutral' }}">{{ $todayReport?->statusLabel() ?? 'Belum ada laporan' }}</span>
+                            <span class="badge {{ $row['tone'] }}">{{ $row['label'] }}</span>
                         </div>
                         <div class="mt-3">
                             <b style="font-size:13px;color:#26324a">{{ $student->name }}</b>
@@ -43,16 +56,16 @@
                         </div>
                         <div class="split-list mt-2">
                             <span class="muted">Agenda hari ini</span>
-                            <b>{{ $todayReport?->agendas()->count() ?? 0 }} item</b>
+                            <b>{{ $todayReport?->agendas_count ?? $todayReport?->agendas()->count() ?? 0 }} item</b>
                         </div>
                         <div class="split-list">
                             <span class="muted">Ringkasan</span>
                             <b>{{ $todayReport?->summary_submitted_at?->format('H:i') ?? 'Belum' }}</b>
                         </div>
                         <div class="flex gap-2 mt-3">
-                            <a href="{{ route('students.show', $student) }}" class="btn btn-ghost btn-sm flex-1">Profil</a>
+                            <a href="{{ route('students.show', $student) }}" class="btn btn-ghost btn-sm flex-1" data-modal="{{ route('students.show', $student) }}" data-modal-size="lg">Profil</a>
                             @if ($todayReport)
-                                <a href="{{ route('reviews.show', $todayReport) }}" class="btn btn-soft btn-sm flex-1">Buka laporan</a>
+                                <a href="{{ route('reviews.show', $todayReport) }}" class="btn btn-soft btn-sm flex-1" data-modal="{{ route('reviews.show', $todayReport) }}" data-modal-size="lg">Buka laporan</a>
                             @endif
                         </div>
                     </div>

@@ -6,6 +6,7 @@
     $navNotifications = $route === 'notifications.index';
     $isStudent = $user->isStudent();
     $reviewAccess = $user->canReviewReports() || $user->canViewAllReports();
+    $attentionCount = $reviewAccess ? \App\Services\StudentCompliance::attentionCount($user) : 0;
 
     $links = [
         ['label' => 'Utama', 'items' => array_values(array_filter([
@@ -16,7 +17,7 @@
         ]))],
         ['label' => 'Bimbingan', 'items' => array_values(array_filter([
             $reviewAccess ? ['route' => 'reviews.index', 'match' => 'reviews.*', 'label' => 'Review Laporan', 'icon' => 'check-circle', 'count' => $user->canReviewReports() ? \App\Models\DailyReport::visibleTo($user)->where('status', 'summary')->count() : 0] : null,
-            $reviewAccess ? ['route' => 'students.index', 'match' => 'students.*', 'label' => 'Siswa Bimbingan', 'icon' => 'users'] : null,
+            $reviewAccess ? ['route' => 'students.index', 'match' => 'students.*', 'label' => 'Siswa Bimbingan', 'icon' => 'users', 'count' => $attentionCount] : null,
         ]))],
         ['label' => 'Administrasi', 'items' => array_values(array_filter([
             $user->hasPermission('manage-users') ? ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'label' => 'Anggota', 'icon' => 'briefcase'] : null,
@@ -25,7 +26,13 @@
         ]))],
     ];
     $links = array_values(array_filter($links, fn ($group) => count($group['items'])));
+    $modalMode = request()->boolean('modal');
 @endphp
+@if ($modalMode)
+    <div data-modal-content data-modal-title="{{ trim(strip_tags($__env->yieldContent('title'))) }}">
+        @yield('content')
+    </div>
+@else
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -39,10 +46,9 @@
 <div class="shell">
     <aside class="sidebar" id="sidebar">
         <a href="{{ route('dashboard') }}" class="brand">
-            <span class="brand-mark"><x-icon name="sparkles" /></span>
             <span>
                 <b>Ruang Kerja</b>
-                <small>PT Inovasi Absen</small>
+                <small>Create If Impossible</small>
             </span>
         </a>
 
@@ -102,11 +108,12 @@
             </div>
         </div>
     </aside>
+    <div class="sidebar-backdrop" data-sidebar-close></div>
 
     <div class="main">
         <header class="topbar">
             <div class="flex items-center">
-                <button type="button" class="icon-btn mobile-menu" id="sidebar-toggle" aria-label="Buka menu">
+                <button type="button" class="icon-btn mobile-menu" id="sidebar-toggle" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar">
                     <x-icon name="menu" />
                 </button>
                 <div class="breadcrumb">
@@ -193,5 +200,19 @@
         </main>
     </div>
 </div>
+
+<div class="modal-root" id="modal-root" aria-hidden="true">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head">
+            <h2 id="modal-title">Detail</h2>
+            <button type="button" class="icon-btn" data-modal-close aria-label="Tutup" style="width:30px;height:30px">
+                <x-icon name="x" :size="15" />
+            </button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
 </body>
 </html>
+@endif

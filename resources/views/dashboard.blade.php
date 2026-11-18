@@ -22,7 +22,7 @@
                 @if ($isStudent)
                     kirim agenda pagi, lalu lengkapi ringkasan sebelum pukul 18.00.
                 @elseif ($user->canReviewReports())
-                    {{ $stats['review_pending'] }} laporan menunggu review hari ini.
+                    {{ $stats['review_pending'] }} laporan menunggu review hari ini.@if ($stats['attention']) {{ $stats['attention'] }} siswa belum lengkapi laporan.@endif
                 @else
                     berikut ringkasan aktivitas workspace hari ini.
                 @endif
@@ -33,11 +33,11 @@
                 <x-icon name="calendar" /> Kalender
             </a>
             @if ($isStudent)
-                <a href="{{ route('reports.today') }}" class="btn btn-primary">
+                <a href="{{ route('reports.today') }}" class="btn btn-primary" data-modal="{{ route('reports.today') }}" data-modal-size="lg">
                     <x-icon name="file-text" /> {{ $todayReport?->isSummarySubmitted() ? 'Lihat laporan' : 'Isi laporan hari ini' }}
                 </a>
             @else
-                <a href="{{ route('agenda.create') }}" class="btn btn-primary">
+                <a href="{{ route('agenda.create') }}" class="btn btn-primary" data-modal="{{ route('agenda.create') }}">
                     <x-icon name="plus" /> Tambah agenda
                 </a>
             @endif
@@ -63,6 +63,19 @@
             <span>Sinkron dengan database · {{ now()->format('H:i') }} WIB</span>
         </div>
     </div>
+
+    @if ($attention->isNotEmpty())
+        <div class="alert error attention-alert">
+            <x-icon name="alert" />
+            <div class="flex-1">
+                <b>{{ $attention->count() }} siswa belum melengkapi laporan hari ini.</b>
+                <span>
+                    {{ $attention->take(4)->map(fn ($row) => $row['student']->name.' ('.$row['label'].')')->join(', ') }}@if ($attention->count() > 4) dan {{ $attention->count() - 4 }} lainnya @endif
+                </span>
+            </div>
+            <a href="{{ route('students.index') }}" class="btn btn-ghost btn-sm">Pantau siswa</a>
+        </div>
+    @endif
 
     <div class="grid-4 mb-4">
         <div class="stat">
@@ -143,7 +156,7 @@
                     <div class="empty-icon"><x-icon name="calendar" /></div>
                     <b>Belum ada agenda hari ini</b>
                     <p>Tambahkan agenda agar progres kerja hari ini tercatat rapi.</p>
-                    <a href="{{ route('agenda.create') }}" class="btn btn-primary btn-sm"><x-icon name="plus" :size="13" /> Tambah agenda</a>
+                    <a href="{{ route('agenda.create') }}" class="btn btn-primary btn-sm" data-modal="{{ route('agenda.create') }}"><x-icon name="plus" :size="13" /> Tambah agenda</a>
                 </div>
             @else
                 <div class="agenda-list">
@@ -174,7 +187,7 @@
                                 </div>
                             </div>
                             @can('manage-agenda-for', $agenda->user)
-                                <a href="{{ route('agenda.edit', $agenda) }}" class="icon-btn" style="width:28px;height:28px" title="Ubah agenda">
+                                <a href="{{ route('agenda.edit', $agenda) }}" class="icon-btn" style="width:28px;height:28px" title="Ubah agenda" data-modal="{{ route('agenda.edit', $agenda) }}">
                                     <x-icon name="edit" :size="14" />
                                 </a>
                             @endcan
@@ -205,7 +218,7 @@
                                 <x-icon name="alert" />
                                 <span>Kamu belum mengirim agenda pagi. Kirim sekarang agar pembimbing tahu rencana kerjamu.</span>
                             </div>
-                            <a href="{{ route('reports.today') }}" class="btn btn-primary btn-block">Mulai isi agenda pagi</a>
+                            <a href="{{ route('reports.today') }}" class="btn btn-primary btn-block" data-modal="{{ route('reports.today') }}" data-modal-size="lg">Mulai isi agenda pagi</a>
                         @else
                             <div class="split-list">
                                 <span class="muted">Agenda pagi</span>
@@ -226,10 +239,39 @@
                             @if ($todayReport->review_note)
                                 <div class="review-quote mt-3">{{ $todayReport->review_note }}</div>
                             @endif
-                            <a href="{{ route('reports.today') }}" class="btn btn-primary btn-block mt-3">
+                            <a href="{{ route('reports.today') }}" class="btn btn-primary btn-block mt-3" data-modal="{{ route('reports.today') }}" data-modal-size="lg">
                                 {{ $todayReport->isSummarySubmitted() ? 'Lihat laporan hari ini' : 'Isi ringkasan sore' }}
                             </a>
                         @endif
+                    </div>
+                </div>
+            @endif
+
+            @if ($attention->isNotEmpty())
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Perlu perhatian</h2>
+                            <p>Belum isi agenda atau ringkasan hari ini</p>
+                        </div>
+                        <span class="badge danger">{{ $attention->count() }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="list">
+                            @foreach ($attention->take(5) as $row)
+                                <a href="{{ route('students.show', $row['student']) }}" class="list-item" data-modal="{{ route('students.show', $row['student']) }}" data-modal-size="lg">
+                                    <x-avatar :user="$row['student']" size="sm" />
+                                    <div class="grow">
+                                        <b>{{ $row['student']->name }}</b>
+                                        <small>{{ $row['student']->department ?? 'Siswa PKL' }}@if ($row['report']?->morning_submitted_at) · agenda dikirim {{ $row['report']->morning_submitted_at->format('H:i') }}@endif</small>
+                                    </div>
+                                    <span class="badge {{ $row['tone'] }}">{{ $row['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <a href="{{ route('students.index') }}" class="btn btn-ghost btn-sm btn-block">Lihat semua siswa bimbingan</a>
                     </div>
                 </div>
             @endif
@@ -261,7 +303,7 @@
                                             <b>{{ $queueReport->user->name }}</b>
                                             <small>{{ $queueReport->report_date->translatedFormat('d M Y') }} · {{ $queueReport->statusLabel() }}</small>
                                         </div>
-                                        <a href="{{ route('reviews.show', $queueReport) }}" class="btn btn-soft btn-sm">Review</a>
+                                        <a href="{{ route('reviews.show', $queueReport) }}" class="btn btn-soft btn-sm" data-modal="{{ route('reviews.show', $queueReport) }}" data-modal-size="lg">Review</a>
                                     </div>
                                 @endforeach
                             </div>
@@ -343,7 +385,7 @@
                 <div class="card-body">
                     <div class="list">
                         @foreach ($recentReports as $recent)
-                            <a href="{{ $user->canReviewReports() && ! $isStudent ? route('reviews.show', $recent) : route('reports.show', $recent) }}" class="list-item">
+                            <a href="{{ $user->canReviewReports() && ! $isStudent ? route('reviews.show', $recent) : route('reports.show', $recent) }}" class="list-item" data-modal="{{ $user->canReviewReports() && ! $isStudent ? route('reviews.show', $recent) : route('reports.show', $recent) }}" data-modal-size="lg">
                                 <x-avatar :user="$recent->user" size="sm" />
                                 <div class="grow">
                                     <b>{{ $isStudent ? $recent->report_date->translatedFormat('l, d M') : $recent->user->name }}</b>

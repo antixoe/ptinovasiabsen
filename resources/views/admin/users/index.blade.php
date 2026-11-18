@@ -12,7 +12,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('admin.roles.index') }}" class="btn btn-ghost"><x-icon name="shield" /> Peran & izin</a>
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary"><x-icon name="plus" /> Tambah anggota</a>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary" data-modal="{{ route('admin.users.create') }}" data-modal-size="lg"><x-icon name="plus" /> Tambah anggota</a>
         </div>
     </div>
 
@@ -25,24 +25,24 @@
         </div>
 
         <div class="card-body pad" style="padding-bottom:0">
-            <form method="GET" action="{{ route('admin.users.index') }}" class="flex items-center gap-2" style="flex-wrap:wrap" data-autosubmit>
-                <div class="search-box" style="width:210px">
+            <form method="GET" action="{{ route('admin.users.index') }}" class="filter-bar" data-autosubmit>
+                <div class="search-box">
                     <x-icon name="search" />
                     <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari nama atau email…">
                 </div>
-                <select name="role" class="select" style="width:150px">
+                <select name="role" class="select">
                     <option value="">Semua peran</option>
                     @foreach ($roles as $role)
                         <option value="{{ $role->id }}" @selected((string) request('role') === (string) $role->id)>{{ $role->name }}</option>
                     @endforeach
                 </select>
-                <select name="level" class="select" style="width:150px">
+                <select name="level" class="select">
                     <option value="">Semua level</option>
                     @foreach ($levels as $level)
                         <option value="{{ $level->id }}" @selected((string) request('level') === (string) $level->id)>{{ $level->name }}</option>
                     @endforeach
                 </select>
-                <select name="status" class="select" style="width:135px">
+                <select name="status" class="select">
                     <option value="">Semua status</option>
                     <option value="active" @selected(request('status') === 'active')>Aktif</option>
                     <option value="inactive" @selected(request('status') === 'inactive')>Nonaktif</option>
@@ -86,7 +86,11 @@
                                 <td class="tiny muted">{{ $member->last_login_at?->diffForHumans() ?? 'Belum pernah' }}</td>
                                 <td>
                                     <div class="actions">
-                                        <a href="{{ route('admin.users.edit', $member) }}" class="btn btn-ghost btn-sm"><x-icon name="edit" :size="12" /> Ubah</a>
+                                        <a href="{{ route('admin.users.edit', $member) }}" class="btn btn-ghost btn-sm" data-modal="{{ route('admin.users.edit', $member) }}" data-modal-size="lg"><x-icon name="edit" :size="12" /> Ubah</a>
+                                        <form method="POST" action="{{ route('admin.users.reset-password', $member) }}" data-confirm="Reset kata sandi {{ $member->name }} ke kata sandi default? Anggota wajib menggantinya saat login berikutnya.">
+                                            @csrf
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Reset kata sandi ke default"><x-icon name="lock" :size="12" /> Reset</button>
+                                        </form>
                                         @if ($member->id !== auth()->id())
                                             <form method="POST" action="{{ route('admin.users.destroy', $member) }}" data-confirm="Hapus akun {{ $member->name }}? Data agenda dan laporan ikut terhapus.">
                                                 @csrf @method('DELETE')

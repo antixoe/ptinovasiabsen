@@ -93,23 +93,32 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-head"><div><h2>Kata sandi</h2><p>{{ $editing ? 'Kosongkan bila tidak diubah' : 'Minimal 8 karakter' }}</p></div></div>
+                    <div class="card-head"><div><h2>Kata sandi</h2><p>{{ $editing ? 'Kosongkan bila tidak diubah' : 'Kata sandi awal akun' }}</p></div></div>
                     <div class="card-body pad">
+                        @unless ($editing)
+                            <div class="alert info" style="margin-bottom:12px">
+                                <x-icon name="info" />
+                                <span>Kata sandi default: <b>{{ config('auth.default_password') }}</b>. Anggota wajib menggantinya saat login pertama.</span>
+                            </div>
+                        @endunless
                         <div class="form-grid">
                             <label class="field">
                                 <span>Kata sandi</span>
-                                <input type="password" name="password" class="input" autocomplete="new-password" @unless($editing) required @endunless>
+                                <input type="password" name="password" class="input" autocomplete="new-password" value="{{ $editing ? '' : old('password', config('auth.default_password')) }}">
                             </label>
                             <label class="field">
                                 <span>Ulangi kata sandi</span>
-                                <input type="password" name="password_confirmation" class="input" autocomplete="new-password" @unless($editing) required @endunless>
+                                <input type="password" name="password_confirmation" class="input" autocomplete="new-password" value="{{ $editing ? '' : old('password_confirmation', config('auth.default_password')) }}">
                             </label>
                         </div>
+                        @unless ($editing)
+                            <button type="button" class="btn btn-ghost btn-sm" data-use-default-password="{{ config('auth.default_password') }}"><x-icon name="lock" :size="12" /> Pakai kata sandi default</button>
+                        @endunless
                     </div>
                 </div>
 
                 <div class="flex gap-2 justify-between">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost">Batal</a>
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost" data-modal-close>Batal</a>
                     <button type="submit" class="btn btn-primary"><x-icon name="check" :size="14" /> {{ $editing ? 'Simpan perubahan' : 'Buat akun' }}</button>
                 </div>
             </div>

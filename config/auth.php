@@ -114,4 +114,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default Password
+    |--------------------------------------------------------------------------
+    |
+    | Akun yang dibuat admin memakai kata sandi ini. Pemilik akun wajib
+    | menggantinya saat login pertama.
+    |
+    */
+
+    'default_password' => env('DEFAULT_PASSWORD', 'CreateIfImpossible2026'),
+
 ];

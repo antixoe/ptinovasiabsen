@@ -62,7 +62,8 @@ class UserController extends Controller
     {
         $data = $this->validated($request);
         $this->assertRoleAssignable($request->user(), Role::findOrFail($data['role_id']));
-        $data['password'] = $request->input('password');
+        $data['password'] = $request->input('password') ?: config('auth.default_password');
+        $data['must_change_password'] = true;
         $data['email_verified_at'] = now();
 
         $user = User::create($data);
@@ -125,6 +126,27 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('status', 'Data anggota berhasil diperbarui.');
     }
 
+    public function resetPassword(Request $request, User $user): RedirectResponse
+    {
+        $user->forceFill([
+            'password' => config('auth.default_password'),
+            'must_change_password' => true,
+        ])->save();
+
+        AuditLogger::log('user.password_reset', $user, [
+            'email' => $user->email,
+            'by' => $request->user()?->email,
+        ]);
+
+        $message = 'Kata sandi '.$user->name.' direset ke kata sandi default. Anggota wajib menggantinya saat login berikutnya.';
+
+        if ($user->id === $request->user()?->id) {
+            return redirect()->route('password.edit')->with('status', $message);
+        }
+
+        return redirect()->route('admin.users.index')->with('status', $message);
+    }
+
     public function destroy(Request $request, User $user): RedirectResponse
     {
         if ($user->id === $request->user()->id) {
@@ -150,7 +172,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user?->id)],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'level_id' => ['nullable', 'integer', 'exists:levels,id'],
             'mentor_id' => ['nullable', 'integer', 'exists:users,id'],

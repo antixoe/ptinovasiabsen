@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DailyReport;
 use App\Models\User;
 use App\Services\CalendarBuilder;
+use App\Services\StudentCompliance;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,24 +16,13 @@ class StudentController extends Controller
         $user = $request->user();
         abort_unless($user->canReviewReports() || $user->canViewAllReports(), 403);
 
-        $students = User::query()
-            ->whereHas('level', fn ($query) => $query->where('slug', 'students'))
-            ->when(! $user->canViewAllReports(), fn ($query) => $query->where('mentor_id', $user->id))
-            ->with(['role', 'level', 'mentor'])
-            ->withCount([
-                'dailyReports as pending_reports_count' => fn ($query) => $query->where('status', 'summary'),
-                'dailyReports as reviewed_reports_count' => fn ($query) => $query->where('status', 'reviewed'),
-            ])
-            ->orderBy('name')
-            ->get();
+        $rows = StudentCompliance::snapshot($user);
 
-        $todayReports = DailyReport::query()
-            ->whereIn('user_id', $students->pluck('id'))
-            ->whereDate('report_date', today())
-            ->get()
-            ->keyBy('user_id');
+        $attention = $rows->where('needs_attention', true)->values();
+        $missingMorning = $attention->where('state', StudentCompliance::MISSING_MORNING)->count();
+        $missingSummary = $rows->where('state', StudentCompliance::MISSING_SUMMARY)->count();
 
-        return view('students.index', compact('students', 'todayReports'));
+        return view('students.index', compact('rows', 'attention', 'missingMorning', 'missingSummary'));
     }
 
     public function show(Request $request, User $student): View
