@@ -1,14 +1,111 @@
+const FLASH_KEY = 'workspace-flash-toast';
+
+const stashToast = (message, type = 'success') => {
+    if (!message) return;
+
+    try {
+        sessionStorage.setItem(FLASH_KEY, JSON.stringify({ message, type }));
+    } catch (error) {
+        // Storage can be unavailable (private mode); the reload still works.
+    }
+};
+
+const takeStashedToast = () => {
+    try {
+        const raw = sessionStorage.getItem(FLASH_KEY);
+        if (!raw) return null;
+        sessionStorage.removeItem(FLASH_KEY);
+        return JSON.parse(raw);
+    } catch (error) {
+        return null;
+    }
+};
+
+// AJAX submits follow the redirect themselves, which consumes the session flash.
+// Read the rendered toast out of that response so it can be replayed after reload.
+const readFlashFrom = async (response) => {
+    try {
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        return doc.querySelector('.toast-ios:not(.is-error) .toast-ios-body span')?.textContent?.trim() || null;
+    } catch (error) {
+        return null;
+    }
+};
+
+const reloadWithToast = async (response) => {
+    const message = await readFlashFrom(response);
+    if (message) stashToast(message, 'success');
+    window.location.reload();
+};
+
 const ready = (fn) => {
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
 };
 
-const toast = (message) => {
+const TOAST_ICONS = {
+    success: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+    error: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+};
+
+const toastStack = () => {
+    let stack = document.getElementById('toast-stack');
+
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'toast-stack';
+        stack.className = 'toast-stack';
+        stack.setAttribute('role', 'status');
+        stack.setAttribute('aria-live', 'polite');
+        document.body.appendChild(stack);
+    }
+
+    return stack;
+};
+
+const dismissToast = (el) => {
+    if (!el || el.classList.contains('closing')) return;
+    el.classList.remove('paused');
+    el.classList.add('closing');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 500);
+};
+
+const armToast = (el, life = 6000) => {
+    el.style.setProperty('--toast-life', life + 'ms');
+    let timer = setTimeout(() => dismissToast(el), life);
+
+    el.addEventListener('mouseenter', () => {
+        clearTimeout(timer);
+        el.classList.add('paused');
+    });
+
+    el.addEventListener('mouseleave', () => {
+        el.classList.remove('paused');
+        timer = setTimeout(() => dismissToast(el), 1500);
+    });
+
+    el.querySelector('[data-toast-close]')?.addEventListener('click', () => dismissToast(el));
+};
+
+const toast = (message, type = 'error') => {
+    if (!message) return;
+
     const el = document.createElement('div');
-    el.className = 'toast';
-    el.textContent = message;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    el.className = 'toast-ios' + (type === 'error' ? ' is-error' : '');
+    el.dataset.glassToast = '';
+    el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    el.innerHTML = '<span class="toast-ios-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        + (TOAST_ICONS[type] || TOAST_ICONS.success)
+        + '</svg></span><div class="toast-ios-body"><b></b><span></span></div>'
+        + '<button type="button" class="toast-ios-close" data-toast-close aria-label="Tutup notifikasi">'
+        + '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+        + '</button><i class="toast-ios-progress" aria-hidden="true"></i>';
+
+    el.querySelector('b').textContent = type === 'success' ? 'Berhasil' : 'Gagal diproses';
+    el.querySelector('.toast-ios-body span').textContent = message;
+    toastStack().appendChild(el);
+    armToast(el);
 };
 
 const initDynamicRows = (scope) => {
@@ -136,6 +233,13 @@ ready(() => {
             input.value = button.dataset.useDefaultPassword;
         });
     });
+
+    // Glass flash toasts rendered by the server
+    document.querySelectorAll('[data-glass-toast]').forEach((el) => armToast(el));
+
+    // Toast carried over from an AJAX submit that already consumed the flash
+    const pendingToast = takeStashedToast();
+    if (pendingToast) setTimeout(() => toast(pendingToast.message, pendingToast.type || 'success'), 120);
 
     // Dismiss flash messages
     document.querySelectorAll('.alert[data-dismissible]').forEach((alert) => {
@@ -282,7 +386,7 @@ function initModals() {
             }
 
             close();
-            window.location.reload();
+            return reloadWithToast(response);
         } catch (error) {
             if (inside) notify(form, 'Koneksi gagal. Silakan coba lagi.');
             else toast('Koneksi gagal. Silakan coba lagi.');
@@ -314,7 +418,7 @@ function initModals() {
                 }
 
                 close();
-                window.location.reload();
+                return reloadWithToast(response);
             } catch (error) {
                 const box = body.querySelector('.modal-alert');
                 box.hidden = false;

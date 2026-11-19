@@ -86,6 +86,10 @@
                         <span class="nav-count hot">{{ $unreadCount }}</span>
                     @endif
                 </a>
+                <a href="{{ route('account.edit') }}" class="nav-item {{ request()->routeIs('account.*') ? 'active' : '' }}">
+                    <x-icon name="settings" />
+                    <span>Pengaturan</span>
+                </a>
             </div>
         </nav>
 
@@ -183,23 +187,12 @@
         </header>
 
         <main class="page">
-            @if (session('status'))
-                <div class="alert success">
-                    <x-icon name="check-circle" />
-                    <span>{{ session('status') }}</span>
-                </div>
-            @endif
-            @if ($errors->any())
-                <div class="alert error">
-                    <x-icon name="alert" />
-                    <span>{{ $errors->first() }}</span>
-                </div>
-            @endif
-
             @yield('content')
         </main>
     </div>
 </div>
+
+<x-toast />
 
 <div class="modal-root" id="modal-root" aria-hidden="true">
     <div class="modal-backdrop" data-modal-close></div>

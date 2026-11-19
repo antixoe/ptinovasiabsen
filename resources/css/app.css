@@ -283,6 +283,31 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .avatar-stack .avatar { margin-left: -7px; border: 2px solid #fff; }
 .avatar-stack .avatar:first-child { margin-left: 0; }
 
+/* ---------- Account settings ---------- */
+.profile-strip { display: flex; align-items: center; gap: 16px; padding: 18px 20px; margin-bottom: 18px; flex-wrap: wrap; }
+.profile-strip h2 { margin: 0; font-size: 16px; }
+.profile-strip p { margin: 3px 0 8px; font-size: 12px; color: var(--muted); }
+
+.avatar-picker { border: 0; padding: 0; margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+.avatar-picker legend { padding: 0; margin-bottom: 10px; font-size: 11px; font-weight: 500; color: #5d6879; }
+.avatar-choice { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+.avatar-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.avatar-choice .avatar {
+  width: 36px; height: 36px; font-size: 12px;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px transparent;
+  transition: box-shadow .18s, transform .18s;
+}
+.avatar-choice input:checked + .avatar { box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--violet); transform: translateY(-1px); }
+.avatar-choice input:focus-visible + .avatar { outline: 2px solid var(--violet); outline-offset: 3px; }
+.avatar-choice em { font-style: normal; font-size: 9px; color: #98a1b0; }
+.avatar-choice input:checked ~ em { color: #3d4a61; font-weight: 600; }
+
+.kv-list { margin: 0; }
+.kv-list > div { display: flex; justify-content: space-between; gap: 14px; padding: 8px 0; border-bottom: 1px solid #f1f3f6; font-size: 12px; }
+.kv-list > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.kv-list dt { color: #8a94a6; }
+.kv-list dd { margin: 0; color: #2a3550; font-weight: 500; text-align: right; }
+
 /* ---------- Forms ---------- */
 .field { display: block; margin-bottom: 15px; }
 .field > span, .label { display: block; font-size: 11px; font-weight: 600; color: #56627a; margin-bottom: 6px; }
@@ -376,20 +401,21 @@ legend { font-size: 11px; font-weight: 700; color: #43506a; margin-bottom: 8px; 
   position: relative; overflow: hidden;
   background: radial-gradient(circle at 20% 15%, #2c3f63 0%, #17233b 45%, #101827 100%);
   color: #fff; padding: 48px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
 }
 .auth-art:before, .auth-art:after { content: ''; position: absolute; border-radius: 50%; }
 .auth-art:before { width: 420px; height: 420px; right: -140px; top: -120px; background: radial-gradient(circle, rgba(108, 92, 231, .38), transparent 65%); }
 .auth-art:after { width: 380px; height: 380px; left: -120px; bottom: -160px; background: radial-gradient(circle, rgba(90, 212, 160, .18), transparent 65%); }
-.auth-art .brand { padding: 0; position: relative; z-index: 1; }
-.auth-art h2 { position: relative; z-index: 1; margin: auto 0 14px; font-size: 34px; line-height: 1.2; letter-spacing: -1.2px; max-width: 430px; }
+.auth-art .brand { padding: 0; position: absolute; top: 48px; left: 48px; z-index: 1; }
+.auth-art h2 { position: relative; z-index: 1; margin: 0 0 14px; font-size: 34px; line-height: 1.2; letter-spacing: -1.2px; max-width: 430px; }
 .auth-art h2 span { color: #a99cff; }
-.auth-art > p { position: relative; z-index: 1; color: #9dabc0; font-size: 13px; max-width: 400px; margin: 0 0 26px; }
-.auth-features { position: relative; z-index: 1; display: grid; gap: 12px; }
+.auth-art > p { position: relative; z-index: 1; color: #9dabc0; font-size: 13px; max-width: 400px; margin: 0 auto 26px; }
+.auth-features { position: relative; z-index: 1; display: grid; gap: 12px; width: 100%; max-width: 440px; text-align: left; }
 .auth-feature { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid rgba(255, 255, 255, .09); background: rgba(255, 255, 255, .04); border-radius: 10px; }
 .auth-feature svg { width: 16px; height: 16px; color: #a99cff; flex: none; margin-top: 2px; }
 .auth-feature b { display: block; font-size: 11px; color: #eef2f9; font-weight: 600; }
 .auth-feature small { display: block; font-size: 10px; color: #93a3ba; margin-top: 2px; }
-.auth-art footer { position: relative; z-index: 1; margin-top: 28px; font: 10px 'DM Mono', monospace; color: #71839e; }
+.auth-art footer { position: absolute; bottom: 48px; left: 48px; z-index: 1; font: 10px 'DM Mono', monospace; color: #71839e; }
 .auth-form-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
 .auth-box { width: 100%; max-width: 380px; }
 .auth-box .eyebrow { margin-bottom: 10px; }
@@ -690,6 +716,76 @@ body.modal-open { overflow: hidden; }
   position: fixed; right: 18px; bottom: 18px; z-index: 120;
   padding: 10px 14px; border-radius: 10px; background: #1f2b3f; color: #fff;
   font-size: 12px; box-shadow: 0 10px 24px rgba(0, 0, 0, .25);
+}
+
+/* ---------- Glass toasts (iOS style) ---------- */
+.toast-stack {
+  position: fixed; top: max(18px, env(safe-area-inset-top)); right: 18px; z-index: 130;
+  width: min(360px, calc(100vw - 36px));
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.toast-ios {
+  pointer-events: auto; position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) 22px; align-items: center; gap: 11px;
+  padding: 12px 13px 15px; border-radius: 20px;
+  background: rgba(255, 255, 255, .62);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .78);
+  box-shadow: 0 18px 44px rgba(23, 35, 59, .18), 0 2px 6px rgba(23, 35, 59, .06), inset 0 1px 0 rgba(255, 255, 255, .9);
+  animation: toast-in .52s cubic-bezier(.22, 1.35, .36, 1) both;
+}
+.toast-ios-icon {
+  width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center;
+  color: #0f7a52; background: linear-gradient(160deg, rgba(52, 199, 127, .3), rgba(31, 151, 104, .14));
+  border: 1px solid rgba(255, 255, 255, .75); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+.toast-ios.is-error .toast-ios-icon, .toast-ios.is-warning .toast-ios-icon {
+  color: #b3344b; background: linear-gradient(160deg, rgba(255, 109, 133, .32), rgba(207, 77, 99, .16));
+}
+.toast-ios-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toast-ios-body b { font: 700 12px Manrope, sans-serif; letter-spacing: .2px; color: #17233b; }
+.toast-ios-body span { font-size: 12px; line-height: 1.5; color: #42506a; }
+.toast-ios-close {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #7b8698;
+  background: rgba(255, 255, 255, .55); border: 1px solid rgba(255, 255, 255, .8);
+  transition: background .2s, color .2s;
+}
+.toast-ios-close:hover { background: rgba(255, 255, 255, .9); color: #2a3550; }
+.toast-ios-progress {
+  position: absolute; left: 13px; right: 13px; bottom: 7px; height: 2px; border-radius: 999px;
+  transform: scaleX(1); transform-origin: left center; opacity: .75;
+  background: linear-gradient(90deg, #34c77f, #1f9768);
+  animation: toast-progress var(--toast-life, 6000ms) linear forwards;
+}
+.toast-ios.is-error .toast-ios-progress, .toast-ios.is-warning .toast-ios-progress {
+  background: linear-gradient(90deg, #ff8fa3, #cf4d63);
+}
+.toast-ios.paused .toast-ios-progress { animation-play-state: paused; }
+.toast-ios.closing { animation: toast-out .3s ease forwards; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-16px) scale(.94); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(-10px) scale(.96); filter: blur(4px); }
+}
+@keyframes toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .toast-ios, .toast-ios.closing { animation-duration: .01ms; }
+  .toast-ios-progress { animation: none; opacity: .35; }
+}
+@media (max-width: 640px) {
+  .toast-stack {
+    top: auto; right: 12px; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+  .toast-ios { animation-name: toast-in-mobile; }
+}
+@keyframes toast-in-mobile {
+  from { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 @media (max-width: 640px) {
   .modal-root.open { padding: 0; }
